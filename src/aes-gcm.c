@@ -172,20 +172,15 @@ static void aes_gctr(void *aes, const u8 *icb, const u8 *x, size_t xlen, u8 *y)
 }
 
 
-static void * aes_gcm_init_hash_subkey(const u8 *key, size_t key_len, u8 *H)
+static void aes_gcm_init_hash_subkey(void *ctx, const u8 *key, size_t key_len, u8 *H)
 {
-	void *aes;
-
-	aes = aes_encrypt_init(key, key_len);
-	if (aes == NULL)
-		return NULL;
+	aes_encrypt_init(ctx, key, key_len);
 
 	/* Generate hash subkey H = AES_K(0^128) */
 	os_memset(H, 0, AES_BLOCK_SIZE);
-	aes_encrypt(aes, H, H);
+	aes_encrypt(ctx, H, H);
 	/* wpa_hexdump_key(MSG_EXCESSIVE, "Hash subkey H for GHASH",
 			H, AES_BLOCK_SIZE); */
-	return aes;
 }
 
 
@@ -272,11 +267,9 @@ int aes_gcm_ae(const u8 *key, size_t key_len, const u8 *iv, size_t iv_len,
 	u8 H[AES_BLOCK_SIZE];
 	u8 J0[AES_BLOCK_SIZE];
 	u8 S[16];
-	void *aes;
 
-	aes = aes_gcm_init_hash_subkey(key, key_len, H);
-	if (aes == NULL)
-		return -1;
+	u8 aes[aes_context_size_bytes()];
+	aes_gcm_init_hash_subkey(aes, key, key_len, H);
 
 	aes_gcm_prepare_j0(iv, iv_len, H, J0);
 
@@ -306,11 +299,9 @@ int aes_gcm_ad(const u8 *key, size_t key_len, const u8 *iv, size_t iv_len,
 	u8 H[AES_BLOCK_SIZE];
 	u8 J0[AES_BLOCK_SIZE];
 	u8 S[16], T[16];
-	void *aes;
 
-	aes = aes_gcm_init_hash_subkey(key, key_len, H);
-	if (aes == NULL)
-		return -1;
+	u8 aes[aes_context_size_bytes()];
+	aes_gcm_init_hash_subkey(aes, key, key_len, H);
 
 	aes_gcm_prepare_j0(iv, iv_len, H, J0);
 

@@ -9,13 +9,6 @@
 #ifndef OS_H
 #define OS_H
 
-#ifndef os_malloc
-#define os_malloc(s) malloc((s))
-#endif
-#ifndef os_free
-#define os_free(p) free((p))
-#endif
-
 #ifndef os_memcpy
 #define os_memcpy(d, s, n) memcpy((d), (s), (n))
 #endif
