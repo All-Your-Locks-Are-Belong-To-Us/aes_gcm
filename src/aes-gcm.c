@@ -12,6 +12,7 @@
 #include "aes_gcm/includes.h"
 #include "aes_gcm/os.h"
 #include "aes_gcm/aes.h"
+#include "aes_gcm/aes_i.h"
 
 static void inc32(u8 *block)
 {
@@ -268,7 +269,7 @@ int aes_gcm_ae(const u8 *key, size_t key_len, const u8 *iv, size_t iv_len,
 	u8 J0[AES_BLOCK_SIZE];
 	u8 S[16];
 
-	u8 aes[aes_context_size_bytes()];
+	u8 aes[AES_PRIV_SIZE];
 	aes_gcm_init_hash_subkey(aes, key, key_len, H);
 
 	aes_gcm_prepare_j0(iv, iv_len, H, J0);
@@ -300,7 +301,7 @@ int aes_gcm_ad(const u8 *key, size_t key_len, const u8 *iv, size_t iv_len,
 	u8 J0[AES_BLOCK_SIZE];
 	u8 S[16], T[16];
 
-	u8 aes[aes_context_size_bytes()];
+	u8 aes[AES_PRIV_SIZE];
 	aes_gcm_init_hash_subkey(aes, key, key_len, H);
 
 	aes_gcm_prepare_j0(iv, iv_len, H, J0);

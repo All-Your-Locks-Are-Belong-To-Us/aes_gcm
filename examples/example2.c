@@ -2,9 +2,6 @@
 #include <stdio.h>
 #include <string.h>
 
-#define AES_256_KEY_SIZE (32)
-#define AES_BLOCK_SIZE (16)
-
 int main(void) {
     u8 key[AES_256_KEY_SIZE] = {
         0xCA, 0x97, 0x81, 0x12, 0xCA, 0x1B, 0xBD, 0xCA, 0xFA, 0xC2, 0x31, 0xB3, 0x9A, 0x23, 0xDC, 0x4D, 0xA7, 0x86, 0xEF, 0xF8, 0x14, 0x7C, 0x4E, 0x72, 0xB9, 0x80, 0x77, 0x85, 0xAF, 0xEE, 0x48, 0xBB
@@ -16,9 +13,8 @@ int main(void) {
     unsigned char cipher[] = {
        167, 195, 144, 31, 136, 38, 122, 159, 247, 246, 154, 91, 108, 97, 234, 224, 223, 156, 175, 63, 49, 63, 195, 37, 81, 122, 71, 28
     };
-    unsigned char tag[] = { 69, 91, 44, 40, 33, 187, 238, 85, 148, 144, 60, 57, 145, 221, 116, 70 };
-    u8 plain[sizeof(cipher)];
-    memset(plain, 0, sizeof(cipher));
+    unsigned char tag[AES_GCM_TAG_SIZE] = { 69, 91, 44, 40, 33, 187, 238, 85, 148, 144, 60, 57, 145, 221, 116, 70 };
+    u8 plain[sizeof(cipher)] = { 0 };
 
     int ret = aes_gcm_ad(key, sizeof(key), iv, sizeof(iv), cipher, sizeof(cipher), ad, 7, tag, plain);
     if (ret != 0) {
