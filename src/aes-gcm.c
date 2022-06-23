@@ -14,6 +14,8 @@
 #include "aes_gcm/aes.h"
 #include "aes_gcm/aes_i.h"
 
+#define MIN(X, Y) ((X) < (Y) ? (X) : (Y))
+
 static void inc32(u8 *block)
 {
 	u32 val;
@@ -33,6 +35,12 @@ static void xor_block(u8 *dst, const u8 *src)
 	*d++ ^= *s++;
 }
 
+static inline void xor_n_bytes(u8 *dst, const u8 *op1, const u8 *op2, size_t len)
+{
+	for(size_t i = 0; i < len; i++) {
+		*dst++ = *op1++ ^ *op2++;
+	}
+}
 
 static void shift_right_block(u8 *v)
 {
@@ -141,34 +149,18 @@ static void ghash(const u8 *h, const u8 *x, size_t xlen, u8 *y)
 }
 
 
-static void aes_gctr(void *aes, const u8 *icb, const u8 *x, size_t xlen, u8 *y)
+static void aes_gctr(void *aes, const u8 *iv, const u8 *in, size_t len, u8 *out)
 {
-	size_t i, n, last;
-	u8 cb[AES_BLOCK_SIZE], tmp[AES_BLOCK_SIZE];
-	const u8 *xpos = x;
-	u8 *ypos = y;
+	size_t i;
+	u8 counter[AES_BLOCK_SIZE], encrypted_counter[AES_BLOCK_SIZE];
+	os_memcpy(counter, iv, AES_BLOCK_SIZE);
 
-	if (xlen == 0)
-		return;
-
-	n = xlen / 16;
-
-	os_memcpy(cb, icb, AES_BLOCK_SIZE);
-	/* Full blocks */
-	for (i = 0; i < n; i++) {
-		aes_encrypt(aes, cb, ypos);
-		xor_block(ypos, xpos);
-		xpos += AES_BLOCK_SIZE;
-		ypos += AES_BLOCK_SIZE;
-		inc32(cb);
-	}
-
-	last = x + xlen - xpos;
-	if (last) {
-		/* Last, partial block */
-		aes_encrypt(aes, cb, tmp);
-		for (i = 0; i < last; i++)
-			*ypos++ = *xpos++ ^ tmp[i];
+	for (i = 0; i < len; i += AES_BLOCK_SIZE) {
+		aes_encrypt(aes, counter, encrypted_counter);
+		xor_n_bytes(out, in, encrypted_counter, MIN(len - i, AES_BLOCK_SIZE));
+		in += AES_BLOCK_SIZE;
+		out += AES_BLOCK_SIZE;
+		inc32(counter);
 	}
 }
 
@@ -267,7 +259,7 @@ int aes_gcm_ae(const u8 *key, size_t key_len, const u8 *iv, size_t iv_len,
 {
 	u8 H[AES_BLOCK_SIZE];
 	u8 J0[AES_BLOCK_SIZE];
-	u8 S[16];
+	u8 S[AES_GCM_TAG_SIZE];
 
 	u8 aes[AES_PRIV_SIZE];
 	aes_gcm_init_hash_subkey(aes, key, key_len, H);
@@ -299,24 +291,24 @@ int aes_gcm_ad(const u8 *key, size_t key_len, const u8 *iv, size_t iv_len,
 {
 	u8 H[AES_BLOCK_SIZE];
 	u8 J0[AES_BLOCK_SIZE];
-	u8 S[16], T[16];
+	u8 S[AES_GCM_TAG_SIZE], T[AES_GCM_TAG_SIZE];
 
 	u8 aes[AES_PRIV_SIZE];
 	aes_gcm_init_hash_subkey(aes, key, key_len, H);
 
 	aes_gcm_prepare_j0(iv, iv_len, H, J0);
 
+	aes_gcm_ghash(H, aad, aad_len, crypt, crypt_len, S);
+
 	/* P = GCTR_K(inc_32(J_0), C) */
 	aes_gcm_gctr(aes, J0, crypt, crypt_len, plain);
-
-	aes_gcm_ghash(H, aad, aad_len, crypt, crypt_len, S);
 
 	/* T' = MSB_t(GCTR_K(J_0, S)) */
 	aes_gctr(aes, J0, S, sizeof(S), T);
 
 	aes_encrypt_deinit(aes);
 
-	if (os_memcmp_const(tag, T, 16) != 0) {
+	if (os_memcmp_const(tag, T, AES_GCM_TAG_SIZE) != 0) {
 		/* printf("GCM: Tag mismatch\n"); */
 		return -1;
 	}
