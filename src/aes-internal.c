@@ -378,11 +378,6 @@ d##3 = TE0(s##3) ^ TE1(s##0) ^ TE2(s##1) ^ TE3(s##2) ^ rk[4 * i + 3]
     PUTU32(ct + 12, s3);
 }
 
-u32 aes_context_size_bytes()
-{
-    return AES_PRIV_SIZE;
-}
-
 void aes_encrypt_init(void *ctx, const u8 *key, size_t len)
 {
     int res;

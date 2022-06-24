@@ -12,6 +12,11 @@
 
 #include "includes.h"
 
+#define AES_BLOCK_SIZE      (16)
+#define AES_128_KEY_SIZE    (16)
+#define AES_256_KEY_SIZE    (32)
+#define AES_GCM_TAG_SIZE    (16)
+
 int aes_gcm_ae(const u8 *key, size_t key_len,
 			    const u8 *iv, size_t iv_len,
 			    const u8 *plain, size_t plain_len,

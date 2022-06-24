@@ -9,9 +9,6 @@
 #ifndef AES_H
 #define AES_H
 
-#define AES_BLOCK_SIZE 16
-
-u32 aes_context_size_bytes();
 void aes_encrypt_init(void *ctx, const u8 *key, size_t len);
 void aes_encrypt(void *ctx, const u8 *plain, u8 *crypt);
 void aes_encrypt_deinit(void *ctx);
